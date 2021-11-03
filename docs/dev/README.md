@@ -1,10 +1,35 @@
-# 开发指南
+// ==UserScript==
+// @name         超星解除倍速限制
+// @namespace    https://bbs.tampermonkey.net.cn/
+// @version      0.1.0
+// @description  try to take over the world!
+// @author       You
+// @match        https://mooc1-2.chaoxing.com/ananas/modules/video/index.html*
+// @run-at       document-start
+// @grant        none
+// ==/UserScript==
 
-本扩展支持三种类型的脚本,分别为:
+window.oldace = null;
+window.videoobj = []
 
-* 前台脚本
-* [后台脚本](/dev/background.html)
-* [定时脚本](/dev/background.html#定时脚本)
-
-前台脚本为通常意义上的油猴脚本,后台脚本与定时脚本为本脚本猫扩展所特有支持的脚本,详情请看相对应的文档.
-
+document.addEventListener('readystatechange', () => {
+    if (window.videojs !== undefined && window.oldace === null) {
+        console.log('检测到了', window.videojs)
+        window.oldace = window.videojs
+        window.videojs = function (...args) {
+            let ret = window.oldace.call(this, ...args)
+            window.videoobj.push(ret)
+            ret.laston = ret.on;
+            ret.on = function (...args) {
+                console.log('调用了on', args);
+                if (args[0] == 'ratechange') {
+                    console.log('屏蔽限制');
+                    return;
+                }
+                return this.laston(...args)
+            }
+            console.log('videojs', ret)
+            return ret
+        }
+    }
+});
